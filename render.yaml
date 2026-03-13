@@ -6,16 +6,18 @@ services:
     startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: APP_ENV
-        value: production
+        value: "production"
       - key: DIT_BASE_URL
-        value: https://dataapi.moc.go.th
+        value: "https://dataapi.moc.go.th"
       - key: DIT_RICE_PRODUCT_ID
-        value: R11001
+        value: "R11001"
       - key: REQUEST_TIMEOUT_SECONDS
         value: "30"
       - key: DIT_DEFAULT_FROM_DATE
-        value: 2025-01-01
+        value: "2025-01-01"
       - key: DIT_DEFAULT_TO_DATE
-        value: 2025-01-07
+        value: "2025-01-07"
+      - key: DIT_MAX_RANGE_DAYS
+        value: "7"
       - key: CORS_ORIGINS
-        value: http://localhost:5173
+        value: "http://localhost:5173"
