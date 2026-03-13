@@ -1,0 +1,14 @@
+.DS_Store
+Thumbs.db
+*.pyc
+__pycache__/
+.pytest_cache/
+.repo-git/
+backend/.venv/
+backend/.env
+backend/thai_agri.db
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+scripts/logs/
+การเปิดเว็บ.txt
