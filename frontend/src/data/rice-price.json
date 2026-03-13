@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "source_name": "Department of Internal Trade (DIT)",
+    "source_url": "https://data.moc.go.th/OpenData/GISProductPrice",
+    "product_id": "R11001",
+    "product_name": "ข้าวขาว 100% ชั้น 1",
+    "product_desc_th": "",
+    "product_desc_en": "",
+    "category_name": "ขายส่ง",
+    "group_name": "ราคาขายส่งข้าว ผลิตภัณฑ์ข้าวและกระสอบป่าน",
+    "unit": "บาท/100 กก.",
+    "generated_at": "2026-03-13T12:30:00+07:00",
+    "default_from": "2025-01-01",
+    "default_to": "2025-01-07",
+    "max_range_days": 7,
+    "note": "ข้อมูล snapshot ที่บันทึกไว้ล่วงหน้าเพื่อให้หน้าเว็บเปิดแล้วเห็นข้อมูลทันที โดยอ้างอิงข้อมูลจาก DIT"
+  },
+  "records": [
+    {
+      "date": "2025-01-02",
+      "price_min": 1750.0,
+      "price_max": 1760.0,
+      "price_avg": 1755.0,
+      "unit": "บาท/100 กก."
+    },
+    {
+      "date": "2025-01-03",
+      "price_min": 1750.0,
+      "price_max": 1760.0,
+      "price_avg": 1755.0,
+      "unit": "บาท/100 กก."
+    },
+    {
+      "date": "2025-01-06",
+      "price_min": 1730.0,
+      "price_max": 1740.0,
+      "price_avg": 1735.0,
+      "unit": "บาท/100 กก."
+    },
+    {
+      "date": "2025-01-07",
+      "price_min": 1700.0,
+      "price_max": 1710.0,
+      "price_avg": 1705.0,
+      "unit": "บาท/100 กก."
+    }
+  ]
+}

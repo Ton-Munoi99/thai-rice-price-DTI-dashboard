@@ -1,118 +1,80 @@
 # Thailand Rice Price Dashboard
 
-This project now focuses on one live data source and one product:
+แดชบอร์ดนี้ถูกปรับให้เป็น `Static React app + snapshot JSON` เพื่อให้เปิดหน้าเว็บแล้วเห็นข้อมูลทันที เหมาะกับการ deploy ฟรีบน Netlify โดยไม่ต้องรัน backend ค้างไว้
 
-- Department of Internal Trade (DIT) rice price API
-- Product ID: `R11001`
-- Default historical window in the app: `2025-01-01` to `2025-01-07`
+## แนวคิดปัจจุบัน
 
-API references:
+- หน้าเว็บอ่านข้อมูลจากไฟล์ `frontend/src/data/rice-price.json`
+- ไม่มีการยิง DIT API ตอนผู้ใช้เปิดหน้าเว็บ
+- ถ้าต้องการอัปเดตข้อมูล ให้รันสคริปต์ `scripts/update_rice_snapshot.py` แล้ว deploy ใหม่
 
-- Dashboard docs: [https://data.moc.go.th/OpenData/GISProductPrice](https://data.moc.go.th/OpenData/GISProductPrice)
-- API base used by the app: `https://dataapi.moc.go.th/gis-product-prices`
+ข้อดีของแนวทางนี้
 
-## What the app shows
+- เปิดเว็บแล้วข้อมูลขึ้นทันที
+- แชร์ลิงก์ให้คนอื่นใช้ได้ง่าย
+- deploy ฟรีบน Netlify ได้
+- ไม่เสี่ยง timeout ตอนผู้ใช้เปิดหน้าเว็บ
 
-- Daily average price within the selected historical window
-- 7-day average for that window
-- Week-over-week change when enough rows exist
-- Daily min-max band
-- Daily price trend
-- Daily records table
-- User-selectable `from_date` / `to_date` with a short safe request window
+## แหล่งข้อมูล
 
-## Quick start
+- DIT Open Data: [https://data.moc.go.th/OpenData/GISProductPrice](https://data.moc.go.th/OpenData/GISProductPrice)
+- API endpoint: `https://dataapi.moc.go.th/gis-product-prices`
+- Product ID ปัจจุบัน: `R11001`
 
-### Backend
+## โครงสร้างที่เกี่ยวข้อง
 
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
+- `frontend/src/App.jsx` : หน้า dashboard
+- `frontend/src/data/rice-price.json` : snapshot ที่ถูก bundle ไปกับเว็บ
+- `scripts/update_rice_snapshot.py` : สคริปต์อัปเดต snapshot
+- `netlify.toml` : config สำหรับ Netlify
 
-### Frontend
+## รันในเครื่อง
 
-```bash
-cd frontend
+```powershell
+cd "C:\Users\sponlapatp\Desktop\Codex Project\frontend"
 npm install
-copy .env.example .env
 npm run dev
 ```
 
-### Open the app
+เปิด [http://localhost:5173](http://localhost:5173)
 
-- `http://localhost:5173`
+## วิธีอัปเดต snapshot
 
-## Notes
+ตัวอย่างอัปเดตช่วง 7 วัน:
 
-- Backend proxies the DIT API through `GET /api/dashboard/rice`
-- Frontend reads only from the backend, not directly from DIT
-- Daily average is calculated as the midpoint of `price_min` and `price_max`
-- The app uses a short historical date window by default because wider or more recent ranges may time out
-
-## Deploy
-
-### Recommended setup
-
-- Deploy the whole app on Render as a single web service
-
-Why this is better for the current project:
-
-- one URL for users
-- no need to run frontend and backend separately
-- no cross-service API URL wiring
-- simpler sharing with teammates
-
-### Files already prepared
-
-- `render.yaml` for Render
-- `netlify.toml` is still in the repo, but Render is now the recommended path
-
-### Render deployment model
-
-- Render builds the React frontend from `frontend`
-- FastAPI serves the built frontend from `frontend/dist`
-- API routes stay under `/api/...`
-- users open the single Render app URL
-
-### Render steps
-
-1. Push this project to GitHub
-2. In Render, choose `New +`
-3. Select `Blueprint`
-4. Connect the GitHub repo
-5. Render will detect `render.yaml`
-6. Create the service and wait for the first deploy
-7. Open the Render URL and use the app directly
-
-### GitHub prep
-
-This folder is not a git repository yet.
-
-Use these commands when you are ready to publish:
-
-```bash
-git init
-git add .
-git commit -m "Initial Render-ready rice price dashboard"
-git branch -M main
-git remote add origin <your-github-repo-url>
-git push -u origin main
+```powershell
+cd "C:\Users\sponlapatp\Desktop\Codex Project"
+python .\scripts\update_rice_snapshot.py --from-date 2025-01-01 --to-date 2025-01-07
 ```
 
-### Render env already included
+ถ้าต้องการเปลี่ยน output:
 
-- `DIT_BASE_URL=https://dataapi.moc.go.th`
-- `DIT_RICE_PRODUCT_ID=R11001`
-- `DIT_DEFAULT_FROM_DATE=2025-01-01`
-- `DIT_DEFAULT_TO_DATE=2025-01-07`
-- `DIT_MAX_RANGE_DAYS=7`
+```powershell
+python .\scripts\update_rice_snapshot.py --from-date 2025-01-01 --to-date 2025-01-07 --output frontend/src/data/rice-price.json
+```
 
-### Local dev note
+หมายเหตุ:
 
-- In local development, the Vite frontend can still point to `http://localhost:8000` through `frontend/.env`
-- In Render, the frontend uses the same origin by default
+- สคริปต์จะยิง DIT API เป็นช่วงย่อยตาม `--chunk-days` เพื่อช่วยลดโอกาส timeout
+- หลังอัปเดต snapshot แล้ว ให้ build/deploy ใหม่เพื่อให้เว็บใช้ข้อมูลชุดล่าสุด
+
+## Deploy ฟรีบน Netlify
+
+โปรเจกต์นี้ตั้งค่าไว้แล้วใน [netlify.toml](C:/Users/sponlapatp/Desktop/Codex%20Project/netlify.toml)
+
+1. push repo นี้ขึ้น GitHub
+2. ไปที่ [Netlify](https://www.netlify.com/)
+3. เลือก `Add new site` -> `Import an existing project`
+4. เลือก repo `Ton-Munoi99/thai-rice-price-DTI-dashboard`
+5. Netlify จะอ่าน `netlify.toml` อัตโนมัติ
+6. กด deploy
+
+ค่าที่สำคัญ:
+
+- Base directory: `frontend`
+- Build command: `npm install && npm run build`
+- Publish directory: `dist`
+
+## สถานะ backend เดิม
+
+โฟลเดอร์ `backend/` และ `render.yaml` ยังอยู่ใน repo เป็นงานเก่าจากช่วงทดลอง deploy แบบมี backend แต่ไม่จำเป็นต่อ deployment ปัจจุบันบน Netlify
