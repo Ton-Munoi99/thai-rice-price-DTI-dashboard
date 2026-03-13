@@ -58,6 +58,37 @@ python .\scripts\update_rice_snapshot.py --from-date 2025-01-01 --to-date 2025-0
 - สคริปต์จะยิง DIT API เป็นช่วงย่อยตาม `--chunk-days` เพื่อช่วยลดโอกาส timeout
 - หลังอัปเดต snapshot แล้ว ให้ build/deploy ใหม่เพื่อให้เว็บใช้ข้อมูลชุดล่าสุด
 
+## อัปเดตแบบคลิกครั้งเดียว
+
+ถ้าคุณไม่อยากพิมพ์หลายคำสั่งทุกครั้ง ให้ใช้ไฟล์เหล่านี้
+
+- `scripts/update_and_publish_snapshot.ps1` : อัปเดต snapshot + commit + push
+- `scripts/update_snapshot.bat` : ดับเบิลคลิกเพื่อเรียก PowerShell script ด้านบน
+
+การทำงานของสคริปต์แบบ one-click:
+
+1. คำนวณช่วงวันที่ล่าสุดให้อัตโนมัติจากวันนี้ย้อนหลัง `7 วัน`
+2. ดึงข้อมูลจาก DIT
+3. เขียนทับ `frontend/src/data/rice-price.json`
+4. `git add`
+5. `git commit`
+6. `git push origin main`
+7. ให้ Netlify deploy ใหม่จาก GitHub
+
+ถ้าจะรันผ่าน PowerShell เอง:
+
+```powershell
+cd "C:\Users\sponlapatp\Desktop\Codex Project"
+.\scripts\update_and_publish_snapshot.ps1
+```
+
+ถ้าจะกำหนดช่วงวันที่เอง:
+
+```powershell
+cd "C:\Users\sponlapatp\Desktop\Codex Project"
+.\scripts\update_and_publish_snapshot.ps1 -FromDate 2025-01-01 -ToDate 2025-01-07
+```
+
 ## Deploy ฟรีบน Netlify
 
 โปรเจกต์นี้ตั้งค่าไว้แล้วใน [netlify.toml](C:/Users/sponlapatp/Desktop/Codex%20Project/netlify.toml)
