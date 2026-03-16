@@ -21,12 +21,21 @@ DEFAULT_HISTORY_YEARS = 3
 
 DEFAULT_PRODUCTS = [
     {"product_id": "R11029", "product_name": "ข้าวหอมมะลิ 100% ชั้น 1"},
+    {"product_id": "R11031", "product_name": "ข้าวหอมมะลิ 100% ชั้น 2"},
     {"product_id": "R11037", "product_name": "ข้าวหอมปทุมธานี"},
     {"product_id": "R11035", "product_name": "ข้าวหอมจังหวัด"},
     {"product_id": "R11001", "product_name": "ข้าวขาว 100% ชั้น 1"},
+    {"product_id": "R11003", "product_name": "ข้าวขาว 100% ชั้น 2"},
+    {"product_id": "R11005", "product_name": "ข้าวขาว 100% ชั้น 3"},
     {"product_id": "R11007", "product_name": "ข้าวขาว 5%"},
+    {"product_id": "R11009", "product_name": "ข้าวขาว 10%"},
     {"product_id": "R11018", "product_name": "ข้าวสารเหนียว กข.6"},
+    {"product_id": "R11020", "product_name": "ข้าวสารเหนียว 10% เมล็ดยาว"},
+    {"product_id": "R11022", "product_name": "ข้าวสารเหนียว 10% เมล็ดสั้น"},
     {"product_id": "R11026", "product_name": "ข้าวนึ่ง 100%"},
+    {"product_id": "R11027", "product_name": "ข้าวนึ่ง 5%"},
+    {"product_id": "R11033", "product_name": "ปลายข้าวหอมมะลิ"},
+    {"product_id": "R11013", "product_name": "ปลายข้าวขาว เอ วัน เลิศ"},
 ]
 
 
@@ -228,6 +237,7 @@ def main() -> int:
     product_ids = [item.strip() for item in args.product_ids.split(",") if item.strip()]
 
     products: List[Optional[dict]] = [None] * len(product_ids)
+    warnings: List[str] = []
 
     with ThreadPoolExecutor(max_workers=max(1, args.max_workers)) as executor:
         futures = {
@@ -243,12 +253,16 @@ def main() -> int:
             except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
                 if product_id in existing_products:
                     products[index] = existing_products[product_id]
+                    warnings.append(f"{product_id}: fetch failed, kept existing snapshot data ({exc})")
                     continue
-                raise SystemExit(f"Failed to fetch {product_id}: {exc}") from exc
+                warnings.append(f"{product_id}: fetch failed and was skipped ({exc})")
+                products[index] = None
 
     snapshot = build_snapshot([product for product in products if product], start, end)
     output_path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {len(snapshot['products'])} rice products to {output_path}")
+    for warning in warnings:
+        print(f"WARNING: {warning}")
     return 0
 
 
