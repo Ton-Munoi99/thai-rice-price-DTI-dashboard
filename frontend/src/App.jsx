@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from "react";
 import Sparkline from "./components/Sparkline";
-import snapshot from "./data/rice-price.json";
+import TrendChart from "./components/TrendChart";
+import dashboard from "./data/rice-dashboard.json";
 
-const tabs = [
-  { id: "overview", label: "ภาพรวมราคา" },
-  { id: "trend", label: "แนวโน้มรายวัน" },
-  { id: "records", label: "ตารางข้อมูล" },
+const RANGE_OPTIONS = [
+  { label: "30 วัน", days: 30 },
+  { label: "6 เดือน", days: 183 },
+  { label: "1 ปี", days: 365 },
+  { label: "3 ปี", days: 365 * 3 },
 ];
 
 function formatNumber(value, digits = 1) {
@@ -37,343 +39,271 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
-function computeAverage(items, key) {
+function latestStats(product) {
+  const latest = product.records[product.records.length - 1] ?? null;
+  const previous = product.records[product.records.length - 2] ?? null;
+  const changeAbs =
+    latest && previous ? Number((latest.price_avg - previous.price_avg).toFixed(2)) : null;
+  const changePct =
+    latest && previous && previous.price_avg
+      ? Number((((latest.price_avg - previous.price_avg) / previous.price_avg) * 100).toFixed(2))
+      : null;
+
+  return { latest, previous, changeAbs, changePct };
+}
+
+function average(items, key) {
   if (!items.length) return null;
   return items.reduce((sum, item) => sum + item[key], 0) / items.length;
 }
 
-function computeWow(records) {
-  if (records.length < 4) return null;
-  const midpoint = Math.floor(records.length / 2);
-  const previous = records.slice(0, midpoint);
-  const recent = records.slice(midpoint);
-  const previousAvg = computeAverage(previous, "price_avg");
-  const recentAvg = computeAverage(recent, "price_avg");
-  if (!previousAvg || previousAvg === 0 || recentAvg == null) return null;
-  return ((recentAvg - previousAvg) / previousAvg) * 100;
+function minOf(items, key) {
+  return items.length ? Math.min(...items.map((item) => item[key])) : null;
+}
+
+function maxOf(items, key) {
+  return items.length ? Math.max(...items.map((item) => item[key])) : null;
+}
+
+function latestDateAcrossProducts(products) {
+  const dates = products
+    .map((product) => product.records[product.records.length - 1]?.date)
+    .filter(Boolean);
+  if (!dates.length) return null;
+  return dates.sort().at(-1) ?? null;
+}
+
+function cutRecords(records, days) {
+  if (!records.length) return [];
+  const latestDate = new Date(records[records.length - 1].date);
+  const cutoff = new Date(latestDate);
+  cutoff.setDate(cutoff.getDate() - (days - 1));
+  return records.filter((record) => new Date(record.date) >= cutoff);
 }
 
 export default function App() {
-  const meta = snapshot.meta;
-  const records = snapshot.records;
-  const minDate = records[0]?.date ?? "";
-  const maxDate = records[records.length - 1]?.date ?? "";
-  const [activeTab, setActiveTab] = useState("overview");
-  const [fromDate, setFromDate] = useState(meta.default_from);
-  const [toDate, setToDate] = useState(meta.default_to);
+  const products = dashboard.products;
+  const [selectedProductId, setSelectedProductId] = useState(products[0]?.product_id ?? "");
+  const [rangeDays, setRangeDays] = useState(365);
 
-  const filteredRecords = useMemo(() => {
-    return records.filter((record) => {
-      const afterStart = !fromDate || record.date >= fromDate;
-      const beforeEnd = !toDate || record.date <= toDate;
-      return afterStart && beforeEnd;
-    });
-  }, [fromDate, toDate]);
+  const selectedProduct =
+    products.find((product) => product.product_id === selectedProductId) ?? products[0];
 
-  const latestRecord = filteredRecords[filteredRecords.length - 1] ?? null;
-  const latestAvg = latestRecord?.price_avg ?? null;
-  const latestMin = latestRecord?.price_min ?? null;
-  const latestMax = latestRecord?.price_max ?? null;
-  const periodAvg = computeAverage(filteredRecords, "price_avg");
-  const avgSpread = filteredRecords.length
-    ? computeAverage(
-        filteredRecords.map((record) => ({
-          spread: record.price_max - record.price_min,
-        })),
-        "spread"
-      )
-    : null;
-  const periodLow = filteredRecords.length
-    ? Math.min(...filteredRecords.map((record) => record.price_min))
-    : null;
-  const periodHigh = filteredRecords.length
-    ? Math.max(...filteredRecords.map((record) => record.price_max))
-    : null;
-  const wowChange = computeWow(filteredRecords);
-  const sparklineValues = filteredRecords.map((record) => record.price_avg);
+  const selectedRangeRecords = useMemo(
+    () => cutRecords(selectedProduct?.records ?? [], rangeDays),
+    [selectedProduct, rangeDays]
+  );
+
+  const selectedStats = latestStats(selectedProduct);
+  const selectedAverage = average(selectedRangeRecords, "price_avg");
+  const selectedLow = minOf(selectedRangeRecords, "price_min");
+  const selectedHigh = maxOf(selectedRangeRecords, "price_max");
+  const latestMarketDate = latestDateAcrossProducts(products);
+
+  const recentRows = [...selectedRangeRecords].slice(-12).reverse();
 
   return (
     <div className="app-shell">
-      <header className="app-header">
+      <header className="topbar">
         <div>
-          <span className="eyebrow">Netlify Static Snapshot</span>
-          <h1>แดชบอร์ดราคาข้าวไทย</h1>
-          <p>
-            หน้าเว็บอ่านข้อมูลจากไฟล์ snapshot JSON ที่ bundle มาพร้อมแอป
-            เพื่อให้เปิดแล้วเห็นราคาทันที โดยใช้ข้อมูลจาก DIT สินค้า{" "}
-            <strong>{meta.product_name}</strong> รหัส <strong>{meta.product_id}</strong>
+          <span className="eyebrow">Thailand Rice Price Monitor</span>
+          <h1>แดชบอร์ดราคาข้าว</h1>
+          <p className="subtitle">
+            โฟกัสที่ราคาล่าสุดเป็นหลัก แล้วค่อยกดดูย้อนหลังได้สูงสุด 3 ปี
           </p>
-          <div className="notice-bar">
-            <span className="notice-pill">พร้อมใช้งานทันที</span>
-            <span>
-              แหล่งข้อมูล:{" "}
-              <a href={meta.source_url} target="_blank" rel="noreferrer">
-                {meta.source_name}
-              </a>
-            </span>
-            <span>อัปเดต snapshot ล่าสุด: {formatDateTime(meta.generated_at)} น.</span>
-          </div>
         </div>
-
-        <div className="actions">
-          <div className="date-controls">
-            <label>
-              จากวันที่
-              <input
-                type="date"
-                value={fromDate}
-                min={minDate}
-                max={maxDate}
-                onChange={(event) => setFromDate(event.target.value)}
-              />
-            </label>
-            <label>
-              ถึงวันที่
-              <input
-                type="date"
-                value={toDate}
-                min={minDate}
-                max={maxDate}
-                onChange={(event) => setToDate(event.target.value)}
-              />
-            </label>
+        <div className="meta-stack">
+          <div className="meta-chip">
+            <span>อัปเดตระบบ</span>
+            <strong>{formatDateTime(dashboard.meta.generated_at)} น.</strong>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setFromDate(meta.default_from);
-              setToDate(meta.default_to);
-            }}
-          >
-            รีเซ็ตช่วงมาตรฐาน
-          </button>
+          <div className="meta-chip">
+            <span>วันที่ราคาล่าสุด</span>
+            <strong>{formatDate(latestMarketDate)}</strong>
+          </div>
         </div>
       </header>
 
-      <section className="hero-strip">
-        <article className="hero-card">
-          <span className="hero-label">สินค้า</span>
-          <strong>{meta.product_name}</strong>
-          <p>
-            หมวด {meta.category_name} | หน่วย {meta.unit}
-          </p>
-        </article>
-        <article className="hero-card">
-          <span className="hero-label">ช่วงข้อมูลที่แสดง</span>
-          <strong>
-            {formatDate(filteredRecords[0]?.date)} - {formatDate(latestRecord?.date)}
-          </strong>
-          <p>
-            แสดง {filteredRecords.length} ระเบียน จาก snapshot ช่วง{" "}
-            {formatDate(meta.default_from)} - {formatDate(meta.default_to)}
-          </p>
-        </article>
+      <section className="summary-hero">
+        <div className="summary-main">
+          <div className="section-kicker">สินค้าที่เลือก</div>
+          <div className="summary-head">
+            <div>
+              <h2>{selectedProduct.product_name}</h2>
+              <p>
+                {selectedProduct.category_name} | {selectedProduct.unit}
+              </p>
+            </div>
+            <div className="select-wrap">
+              <label htmlFor="product-select">เลือกสินค้า</label>
+              <select
+                id="product-select"
+                value={selectedProduct.product_id}
+                onChange={(event) => setSelectedProductId(event.target.value)}
+              >
+                {products.map((product) => (
+                  <option key={product.product_id} value={product.product_id}>
+                    {product.product_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="price-hero">
+            <div>
+              <span className="price-caption">ราคาล่าสุด</span>
+              <strong className="price-value">
+                {formatNumber(selectedStats.latest?.price_avg)} {selectedProduct.unit}
+              </strong>
+              <p className="price-note">ข้อมูลวันที่ {formatDate(selectedStats.latest?.date)}</p>
+            </div>
+            <div className={`change-badge ${selectedStats.changeAbs >= 0 ? "up" : "down"}`}>
+              <span>เทียบวันก่อนหน้า</span>
+              <strong>
+                {selectedStats.changeAbs == null
+                  ? "-"
+                  : `${selectedStats.changeAbs >= 0 ? "+" : ""}${formatNumber(
+                      selectedStats.changeAbs
+                    )}`}
+              </strong>
+              <small>
+                {selectedStats.changePct == null
+                  ? "ไม่มีข้อมูลเปรียบเทียบ"
+                  : `${selectedStats.changePct >= 0 ? "+" : ""}${formatNumber(
+                      selectedStats.changePct,
+                      2
+                    )}%`}
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div className="summary-side">
+          <div className="mini-metric">
+            <span>ค่าเฉลี่ยย้อนหลัง</span>
+            <strong>{formatNumber(selectedAverage)}</strong>
+            <small>{selectedProduct.unit}</small>
+          </div>
+          <div className="mini-metric">
+            <span>ต่ำสุดในช่วง</span>
+            <strong>{formatNumber(selectedLow)}</strong>
+            <small>{selectedProduct.unit}</small>
+          </div>
+          <div className="mini-metric">
+            <span>สูงสุดในช่วง</span>
+            <strong>{formatNumber(selectedHigh)}</strong>
+            <small>{selectedProduct.unit}</small>
+          </div>
+        </div>
       </section>
 
-      <div className="filter-bar">
-        <div className="filter-copy">
-          <strong>โหมด Static</strong>
-          <p>
-            หน้าเว็บนี้ไม่รอ backend ตอนเปิดใช้งาน จึงเหมาะกับการแชร์ผ่าน Netlify
-            และการเปิดดูข้อมูลอย่างรวดเร็ว
-          </p>
+      <section className="section-block">
+        <div className="section-head">
+          <div>
+            <div className="section-kicker">Latest Board</div>
+            <h3>ราคาล่าสุดของสินค้าข้าว</h3>
+          </div>
         </div>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => window.location.reload()}
-        >
-          โหลดหน้าใหม่
-        </button>
-      </div>
+        <div className="product-grid">
+          {products.map((product) => {
+            const stats = latestStats(product);
+            const sparklineValues = product.records.slice(-30).map((record) => record.price_avg);
+            const deltaClass =
+              stats.changeAbs == null ? "" : stats.changeAbs >= 0 ? "up" : "down";
+            return (
+              <button
+                key={product.product_id}
+                type="button"
+                className={`product-card ${
+                  product.product_id === selectedProduct.product_id ? "active" : ""
+                }`}
+                onClick={() => setSelectedProductId(product.product_id)}
+              >
+                <div className="product-card-head">
+                  <div>
+                    <strong>{product.product_name}</strong>
+                    <span>{product.product_id}</span>
+                  </div>
+                  <span className={`delta-pill ${deltaClass}`}>
+                    {stats.changeAbs == null
+                      ? "-"
+                      : `${stats.changeAbs >= 0 ? "+" : ""}${formatNumber(stats.changeAbs)}`}
+                  </span>
+                </div>
+                <div className="latest-row">
+                  <span>ล่าสุด</span>
+                  <strong>{formatNumber(stats.latest?.price_avg)}</strong>
+                </div>
+                <div className="card-foot">
+                  <span>{formatDate(stats.latest?.date)}</span>
+                  <span>{product.unit}</span>
+                </div>
+                <Sparkline values={sparklineValues} />
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
-      <nav className="tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`tab ${activeTab === tab.id ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+      <section className="section-block history-section">
+        <div className="section-head">
+          <div>
+            <div className="section-kicker">History</div>
+            <h3>ดูราคาย้อนหลัง</h3>
+          </div>
+          <div className="range-switch">
+            {RANGE_OPTIONS.map((option) => (
+              <button
+                key={option.days}
+                type="button"
+                className={rangeDays === option.days ? "active" : ""}
+                onClick={() => setRangeDays(option.days)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {!filteredRecords.length ? (
-        <div className="status error">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</div>
-      ) : (
-        <>
-          <section className="executive-board">
-            <div className="executive-copy">
-              <span className="hero-label">Executive Snapshot</span>
-              <h2>{meta.product_name}</h2>
-              <p>
-                ราคาเฉลี่ยล่าสุด {formatNumber(latestAvg)} {meta.unit} จากวันที่{" "}
-                {formatDate(latestRecord?.date)} พร้อมกรอบราคา {formatNumber(latestMin)} -{" "}
-                {formatNumber(latestMax)} {meta.unit}
-              </p>
-              <p className="executive-note">{meta.note}</p>
+        <div className="history-layout">
+          <div className="chart-panel">
+            <TrendChart
+              records={selectedRangeRecords}
+              color="#15623a"
+              unit={selectedProduct.unit}
+            />
+          </div>
+
+          <div className="table-panel">
+            <div className="table-head">
+              <strong>ราคาย้อนหลังล่าสุด</strong>
+              <span>
+                {selectedRangeRecords.length} ระเบียน | ช่วง {RANGE_OPTIONS.find((x) => x.days === rangeDays)?.label}
+              </span>
             </div>
-
-            <div className="stat-strip">
-              <div className="stat-card">
-                <span>ราคาเฉลี่ยล่าสุด</span>
-                <strong>{formatNumber(latestAvg)}</strong>
-                <small>{meta.unit}</small>
-              </div>
-              <div className="stat-card">
-                <span>ค่าเฉลี่ยทั้งช่วง</span>
-                <strong>{formatNumber(periodAvg)}</strong>
-                <small>{meta.unit}</small>
-              </div>
-              <div className="stat-card">
-                <span>การเปลี่ยนแปลงเทียบช่วงก่อนหน้า</span>
-                <strong>{wowChange == null ? "-" : `${formatNumber(wowChange, 2)}%`}</strong>
-                <small>{wowChange == null ? "ข้อมูลยังไม่พอ" : "คำนวณจากครึ่งช่วงก่อนหน้า"}</small>
-              </div>
-              <div className="stat-card">
-                <span>ส่วนต่างราคาเฉลี่ย</span>
-                <strong>{formatNumber(avgSpread)}</strong>
-                <small>{meta.unit}</small>
-              </div>
-            </div>
-          </section>
-
-          {activeTab === "overview" && (
-            <>
-              <section className="cards">
-                <article className="card spotlight">
-                  <h4>กรอบราคาล่าสุด</h4>
-                  <div className="metric">
-                    <span>ต่ำสุด</span>
-                    <strong>{formatNumber(latestMin)}</strong>
-                  </div>
-                  <div className="metric">
-                    <span>สูงสุด</span>
-                    <strong>{formatNumber(latestMax)}</strong>
-                  </div>
-                </article>
-                <article className="card">
-                  <h4>ราคาต่ำสุดของช่วง</h4>
-                  <div className="metric">
-                    <span>ต่ำสุด</span>
-                    <strong>{formatNumber(periodLow)}</strong>
-                  </div>
-                  <div className="metric">
-                    <span>อิงจากทุกวันในช่วงที่เลือก</span>
-                    <strong>{meta.unit}</strong>
-                  </div>
-                </article>
-                <article className="card">
-                  <h4>ราคาสูงสุดของช่วง</h4>
-                  <div className="metric">
-                    <span>สูงสุด</span>
-                    <strong>{formatNumber(periodHigh)}</strong>
-                  </div>
-                  <div className="metric">
-                    <span>อิงจากทุกวันในช่วงที่เลือก</span>
-                    <strong>{meta.unit}</strong>
-                  </div>
-                </article>
-              </section>
-
-              <section className="two-column">
-                <article className="panel">
-                  <h3>แนวโน้มราคาเฉลี่ย</h3>
-                  <p className="panel-note">
-                    ใช้ค่า midpoint ของราคา `min` และ `max` เพื่อให้เห็นภาพทิศทางราคาอย่างเร็ว
-                  </p>
-                  <Sparkline values={sparklineValues} />
-                </article>
-                <article className="panel">
-                  <h3>ข้อมูลอ้างอิง</h3>
-                  <div className="row-grid">
-                    <div>
-                      <strong>แหล่งข้อมูล</strong>
-                      <div>{meta.source_name}</div>
-                    </div>
-                    <div>
-                      <strong>กลุ่มข้อมูล</strong>
-                      <div>{meta.group_name}</div>
-                    </div>
-                    <div>
-                      <strong>หน่วยราคา</strong>
-                      <div>{meta.unit}</div>
-                    </div>
-                    <div>
-                      <strong>วันที่สร้าง snapshot</strong>
-                      <div>{formatDateTime(meta.generated_at)} น.</div>
-                    </div>
-                  </div>
-                </article>
-              </section>
-            </>
-          )}
-
-          {activeTab === "trend" && (
-            <section className="panel">
-              <h3>แนวโน้มราคารายวัน</h3>
-              <p className="panel-note">
-                ตารางนี้แสดงราคา `ต่ำสุด`, `สูงสุด` และ `เฉลี่ย` ของแต่ละวันที่ถูกบันทึกไว้ใน snapshot
-              </p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>วันที่</th>
-                    <th>ต่ำสุด</th>
-                    <th>สูงสุด</th>
-                    <th>เฉลี่ย</th>
-                    <th>ส่วนต่าง</th>
+            <table>
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>ต่ำสุด</th>
+                  <th>สูงสุด</th>
+                  <th>เฉลี่ย</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentRows.map((record) => (
+                  <tr key={`${selectedProduct.product_id}-${record.date}`}>
+                    <td>{formatDate(record.date)}</td>
+                    <td>{formatNumber(record.price_min)}</td>
+                    <td>{formatNumber(record.price_max)}</td>
+                    <td>{formatNumber(record.price_avg)}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredRecords.map((record) => (
-                    <tr key={record.date}>
-                      <td>{formatDate(record.date)}</td>
-                      <td>{formatNumber(record.price_min)}</td>
-                      <td>{formatNumber(record.price_max)}</td>
-                      <td>{formatNumber(record.price_avg)}</td>
-                      <td>{formatNumber(record.price_max - record.price_min)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-          )}
-
-          {activeTab === "records" && (
-            <section className="panel">
-              <h3>ตารางข้อมูล snapshot</h3>
-              <p className="panel-note">
-                เหมาะสำหรับการตรวจเลขก่อนนำไปใช้อ้างอิงหรือเทียบกับ snapshot รอบถัดไป
-              </p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>วันที่</th>
-                    <th>Price Min</th>
-                    <th>Price Max</th>
-                    <th>Price Avg</th>
-                    <th>หน่วย</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRecords.map((record) => (
-                    <tr key={record.date}>
-                      <td>{record.date}</td>
-                      <td>{formatNumber(record.price_min)}</td>
-                      <td>{formatNumber(record.price_max)}</td>
-                      <td>{formatNumber(record.price_avg)}</td>
-                      <td>{record.unit}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-          )}
-        </>
-      )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

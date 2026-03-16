@@ -1,8 +1,7 @@
 param(
     [string]$FromDate = "",
     [string]$ToDate = "",
-    [int]$WindowDays = 7,
-    [string]$ProductId = "R11001",
+    [int]$HistoryYears = 3,
     [string]$Branch = "main"
 )
 
@@ -10,30 +9,30 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptDir
-$snapshotPath = Join-Path $projectRoot "frontend\src\data\rice-price.json"
+$snapshotPath = Join-Path $projectRoot "frontend\src\data\rice-dashboard.json"
 $updateScript = Join-Path $projectRoot "scripts\update_rice_snapshot.py"
 
 if (-not $ToDate) {
-    $ToDate = (Get-Date).ToString("yyyy-MM-dd")
+    $ToDate = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd")
 }
 
 if (-not $FromDate) {
-    $from = (Get-Date $ToDate).AddDays(-1 * ($WindowDays - 1))
+    $from = (Get-Date $ToDate).AddDays(-1 * (($HistoryYears * 365) - 1))
     $FromDate = $from.ToString("yyyy-MM-dd")
 }
 
-$commitMessage = "Update rice snapshot $FromDate to $ToDate"
+$commitMessage = "Update rice dashboard snapshot $FromDate to $ToDate"
 
 Write-Host ""
-Write-Host "=== Rice Snapshot Update ===" -ForegroundColor Green
+Write-Host "=== Rice Dashboard Snapshot Update ===" -ForegroundColor Green
 Write-Host "From:   $FromDate"
 Write-Host "To:     $ToDate"
-Write-Host "Product:$ProductId"
+Write-Host "Years:  $HistoryYears"
 Write-Host ""
 
 Set-Location $projectRoot
 
-python $updateScript --product-id $ProductId --from-date $FromDate --to-date $ToDate --output $snapshotPath
+python $updateScript --from-date $FromDate --to-date $ToDate --output $snapshotPath
 if ($LASTEXITCODE -ne 0) {
     throw "Snapshot update failed."
 }

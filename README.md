@@ -1,32 +1,39 @@
 # Thailand Rice Price Dashboard
 
-แดชบอร์ดนี้ถูกปรับให้เป็น `Static React app + snapshot JSON` เพื่อให้เปิดหน้าเว็บแล้วเห็นข้อมูลทันที เหมาะกับการ deploy ฟรีบน Netlify โดยไม่ต้องรัน backend ค้างไว้
+แดชบอร์ดนี้ถูกปรับใหม่ให้เน้น `ราคาล่าสุด` ของสินค้าข้าวหลายชนิดเป็นหลัก และให้ผู้ใช้กดดู `ประวัติย้อนหลัง 3 ปี` ได้ทันทีจาก snapshot ที่อยู่ในเว็บโดยตรง
 
-## แนวคิดปัจจุบัน
+## สิ่งที่เปลี่ยน
 
-- หน้าเว็บอ่านข้อมูลจากไฟล์ `frontend/src/data/rice-price.json`
-- ไม่มีการยิง DIT API ตอนผู้ใช้เปิดหน้าเว็บ
-- ถ้าต้องการอัปเดตข้อมูล ให้รันสคริปต์ `scripts/update_rice_snapshot.py` แล้ว deploy ใหม่
-
-ข้อดีของแนวทางนี้
-
-- เปิดเว็บแล้วข้อมูลขึ้นทันที
-- แชร์ลิงก์ให้คนอื่นใช้ได้ง่าย
-- deploy ฟรีบน Netlify ได้
-- ไม่เสี่ยง timeout ตอนผู้ใช้เปิดหน้าเว็บ
+- หน้าแรกเน้น latest board อ่านง่าย ไม่ยัดข้อความเยอะ
+- เลือกสินค้าข้าวได้หลายตัว เช่น ข้าวหอมมะลิ ข้าวหอมปทุมธานี ข้าวขาว ข้าวเหนียว และข้าวนึ่ง
+- ดูย้อนหลังได้ 30 วัน, 6 เดือน, 1 ปี, และ 3 ปี
+- หน้าเว็บไม่ยิง DIT API ตอนเปิดใช้งาน
+- snapshot ถูกสร้างล่วงหน้าแล้ว bundle ไปกับ static site
 
 ## แหล่งข้อมูล
 
 - DIT Open Data: [https://data.moc.go.th/OpenData/GISProductPrice](https://data.moc.go.th/OpenData/GISProductPrice)
-- API endpoint: `https://dataapi.moc.go.th/gis-product-prices`
-- Product ID ปัจจุบัน: `R11001`
+- API prices: `https://dataapi.moc.go.th/gis-product-prices`
+- API product catalog: `https://dataapi.moc.go.th/gis-products?keyword=ข้าว&sell_type=wholesale`
 
-## โครงสร้างที่เกี่ยวข้อง
+จากการเช็ก API จริง DIT มีสินค้ากลุ่มข้าวหลายตัว เช่น:
 
-- `frontend/src/App.jsx` : หน้า dashboard
-- `frontend/src/data/rice-price.json` : snapshot ที่ถูก bundle ไปกับเว็บ
-- `scripts/update_rice_snapshot.py` : สคริปต์อัปเดต snapshot
-- `netlify.toml` : config สำหรับ Netlify
+- `R11029` ข้าวหอมมะลิ 100% ชั้น 1
+- `R11037` ข้าวหอมปทุมธานี
+- `R11035` ข้าวหอมจังหวัด
+- `R11001` ข้าวขาว 100% ชั้น 1
+- `R11007` ข้าวขาว 5%
+- `R11018` ข้าวสารเหนียว กข.6
+- `R11026` ข้าวนึ่ง 100%
+
+## ไฟล์หลัก
+
+- `frontend/src/App.jsx` : หน้า dashboard ใหม่
+- `frontend/src/components/TrendChart.jsx` : กราฟย้อนหลัง
+- `frontend/src/data/rice-dashboard.json` : snapshot หลักสำหรับหลายสินค้าข้าว
+- `scripts/update_rice_snapshot.py` : สคริปต์สร้าง snapshot จาก DIT
+- `scripts/update_and_publish_snapshot.ps1` : อัปเดต + commit + push
+- `.github/workflows/update-rice-snapshot.yml` : อัปเดต snapshot อัตโนมัติทุกวัน
 
 ## รันในเครื่อง
 
@@ -38,101 +45,64 @@ npm run dev
 
 เปิด [http://localhost:5173](http://localhost:5173)
 
-## วิธีอัปเดต snapshot
+## อัปเดต snapshot เอง
 
-ตัวอย่างอัปเดตช่วง 7 วัน:
+อัปเดตย้อนหลัง 3 ปีถึงเมื่อวาน:
 
 ```powershell
 cd "C:\Users\sponlapatp\Desktop\Codex Project"
-python .\scripts\update_rice_snapshot.py --from-date 2025-01-01 --to-date 2025-01-07
+python .\scripts\update_rice_snapshot.py
 ```
 
-ถ้าต้องการเปลี่ยน output:
+กำหนดช่วงเอง:
 
 ```powershell
-python .\scripts\update_rice_snapshot.py --from-date 2025-01-01 --to-date 2025-01-07 --output frontend/src/data/rice-price.json
+python .\scripts\update_rice_snapshot.py --from-date 2023-01-01 --to-date 2026-03-15
 ```
-
-หมายเหตุ:
-
-- สคริปต์จะยิง DIT API เป็นช่วงย่อยตาม `--chunk-days` เพื่อช่วยลดโอกาส timeout
-- หลังอัปเดต snapshot แล้ว ให้ build/deploy ใหม่เพื่อให้เว็บใช้ข้อมูลชุดล่าสุด
 
 ## อัปเดตแบบคลิกครั้งเดียว
 
-ถ้าคุณไม่อยากพิมพ์หลายคำสั่งทุกครั้ง ให้ใช้ไฟล์เหล่านี้
+ดับเบิลคลิก:
 
-- `scripts/update_and_publish_snapshot.ps1` : อัปเดต snapshot + commit + push
-- `scripts/update_snapshot.bat` : ดับเบิลคลิกเพื่อเรียก PowerShell script ด้านบน
+- `scripts/update_snapshot.bat`
 
-การทำงานของสคริปต์แบบ one-click:
-
-1. คำนวณช่วงวันที่ล่าสุดให้อัตโนมัติจากวันนี้ย้อนหลัง `7 วัน`
-2. ดึงข้อมูลจาก DIT
-3. เขียนทับ `frontend/src/data/rice-price.json`
-4. `git add`
-5. `git commit`
-6. `git push origin main`
-7. ให้ Netlify deploy ใหม่จาก GitHub
-
-ถ้าจะรันผ่าน PowerShell เอง:
+หรือรัน:
 
 ```powershell
 cd "C:\Users\sponlapatp\Desktop\Codex Project"
 .\scripts\update_and_publish_snapshot.ps1
 ```
 
-ถ้าจะกำหนดช่วงวันที่เอง:
+สิ่งที่ script นี้ทำ:
 
-```powershell
-cd "C:\Users\sponlapatp\Desktop\Codex Project"
-.\scripts\update_and_publish_snapshot.ps1 -FromDate 2025-01-01 -ToDate 2025-01-07
-```
+1. ดึงข้อมูลข้าวหลายชนิดย้อนหลัง 3 ปี
+2. อัปเดต `frontend/src/data/rice-dashboard.json`
+3. commit
+4. push ไป GitHub
+5. ให้ Netlify deploy ใหม่
 
-## อัปเดตอัตโนมัติรายวันผ่าน GitHub
+## อัปเดตอัตโนมัติผ่าน GitHub Actions
 
-โปรเจกต์นี้มี workflow แล้วที่:
+workflow:
 
 - `.github/workflows/update-rice-snapshot.yml`
 
-workflow นี้จะ:
+การทำงาน:
 
 1. รันทุกวันเวลา `09:15 น.` ตามเวลาไทย
-2. ใช้ช่วงข้อมูลย้อนหลัง `7 วัน` โดยให้วันสิ้นสุดเป็น `เมื่อวาน`
-3. อัปเดต `frontend/src/data/rice-price.json`
-4. commit และ push กลับเข้า repo
-5. ให้ Netlify deploy snapshot ชุดใหม่อัตโนมัติจาก GitHub
+2. ดึงข้อมูลย้อนหลังประมาณ 3 ปีจนถึงเมื่อวาน
+3. อัปเดต `frontend/src/data/rice-dashboard.json`
+4. commit + push กลับเข้า repo
+5. ให้ Netlify deploy อัตโนมัติ
 
-ข้อดีของวิธีนี้:
+ถ้าจะสั่งเองจาก GitHub:
 
-- ไม่ต้องเปิดเครื่องบริษัททิ้งไว้
-- ไม่ต้องกด `.bat` ทุกวัน
-- ถ้าไม่มีข้อมูลเปลี่ยน workflow จะไม่ commit เพิ่ม
+1. ไปแท็บ `Actions`
+2. เลือก `Update Rice Snapshot`
+3. กด `Run workflow`
 
-ถ้าจะสั่งรันเองจาก GitHub:
+## หมายเหตุ
 
-1. ไปที่ repo บน GitHub
-2. เปิดแท็บ `Actions`
-3. เลือก workflow `Update Rice Snapshot`
-4. กด `Run workflow`
-
-## Deploy ฟรีบน Netlify
-
-โปรเจกต์นี้ตั้งค่าไว้แล้วใน [netlify.toml](C:/Users/sponlapatp/Desktop/Codex%20Project/netlify.toml)
-
-1. push repo นี้ขึ้น GitHub
-2. ไปที่ [Netlify](https://www.netlify.com/)
-3. เลือก `Add new site` -> `Import an existing project`
-4. เลือก repo `Ton-Munoi99/thai-rice-price-DTI-dashboard`
-5. Netlify จะอ่าน `netlify.toml` อัตโนมัติ
-6. กด deploy
-
-ค่าที่สำคัญ:
-
-- Base directory: `frontend`
-- Build command: `npm install && npm run build`
-- Publish directory: `dist`
-
-## สถานะ backend เดิม
-
-โฟลเดอร์ `backend/` และ `render.yaml` ยังอยู่ใน repo เป็นงานเก่าจากช่วงทดลอง deploy แบบมี backend แต่ไม่จำเป็นต่อ deployment ปัจจุบันบน Netlify
+- ตอนนี้ผมตั้งเป็น `3 ปี` ก่อน เพราะทดสอบแล้วเสถียรกว่าและเหมาะกับหน้า dashboard มากกว่า 5 ปี
+- ถ้าคุณอยากขยายไปเป็น “สินค้าข้าวทั้งหมด” ใน DIT ทำได้ต่อ แต่ผมแนะนำให้เริ่มจากกลุ่มหลักก่อนเพื่อคุม UX และขนาด snapshot
+- ไฟล์ `frontend/src/data/rice-price.json` เป็นไฟล์เก่าจากเวอร์ชันก่อนหน้าและไม่ใช่ตัวหลักของ dashboard ใหม่แล้ว
