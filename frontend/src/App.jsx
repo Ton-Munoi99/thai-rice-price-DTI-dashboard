@@ -25,6 +25,18 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function formatDateTime(value) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Bangkok",
+  }).format(new Date(value));
+}
+
 function computeAverage(items, key) {
   if (!items.length) return null;
   return items.reduce((sum, item) => sum + item[key], 0) / items.length;
@@ -99,7 +111,7 @@ export default function App() {
                 {meta.source_name}
               </a>
             </span>
-            <span>อัปเดต snapshot ล่าสุด: {formatDate(meta.generated_at)}</span>
+            <span>อัปเดต snapshot ล่าสุด: {formatDateTime(meta.generated_at)} น.</span>
           </div>
         </div>
 
@@ -291,7 +303,7 @@ export default function App() {
                     </div>
                     <div>
                       <strong>วันที่สร้าง snapshot</strong>
-                      <div>{formatDate(meta.generated_at)}</div>
+                      <div>{formatDateTime(meta.generated_at)} น.</div>
                     </div>
                   </div>
                 </article>

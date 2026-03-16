@@ -89,6 +89,33 @@ cd "C:\Users\sponlapatp\Desktop\Codex Project"
 .\scripts\update_and_publish_snapshot.ps1 -FromDate 2025-01-01 -ToDate 2025-01-07
 ```
 
+## อัปเดตอัตโนมัติรายวันผ่าน GitHub
+
+โปรเจกต์นี้มี workflow แล้วที่:
+
+- `.github/workflows/update-rice-snapshot.yml`
+
+workflow นี้จะ:
+
+1. รันทุกวันเวลา `09:15 น.` ตามเวลาไทย
+2. ใช้ช่วงข้อมูลย้อนหลัง `7 วัน` โดยให้วันสิ้นสุดเป็น `เมื่อวาน`
+3. อัปเดต `frontend/src/data/rice-price.json`
+4. commit และ push กลับเข้า repo
+5. ให้ Netlify deploy snapshot ชุดใหม่อัตโนมัติจาก GitHub
+
+ข้อดีของวิธีนี้:
+
+- ไม่ต้องเปิดเครื่องบริษัททิ้งไว้
+- ไม่ต้องกด `.bat` ทุกวัน
+- ถ้าไม่มีข้อมูลเปลี่ยน workflow จะไม่ commit เพิ่ม
+
+ถ้าจะสั่งรันเองจาก GitHub:
+
+1. ไปที่ repo บน GitHub
+2. เปิดแท็บ `Actions`
+3. เลือก workflow `Update Rice Snapshot`
+4. กด `Run workflow`
+
 ## Deploy ฟรีบน Netlify
 
 โปรเจกต์นี้ตั้งค่าไว้แล้วใน [netlify.toml](C:/Users/sponlapatp/Desktop/Codex%20Project/netlify.toml)

@@ -1,0 +1,82 @@
+name: Update Rice Snapshot
+
+on:
+  schedule:
+    - cron: "15 2 * * *"
+  workflow_dispatch:
+    inputs:
+      from_date:
+        description: "Start date (YYYY-MM-DD). Leave blank to use the default rolling window."
+        required: false
+        type: string
+      to_date:
+        description: "End date (YYYY-MM-DD). Leave blank to use yesterday in Bangkok time."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update-snapshot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Resolve date window
+        id: dates
+        shell: bash
+        run: |
+          set -euo pipefail
+          export TZ=Asia/Bangkok
+
+          input_from="${{ github.event.inputs.from_date }}"
+          input_to="${{ github.event.inputs.to_date }}"
+
+          if [[ -n "$input_to" ]]; then
+            to_date="$input_to"
+          else
+            to_date="$(date -d 'yesterday' +%F)"
+          fi
+
+          if [[ -n "$input_from" ]]; then
+            from_date="$input_from"
+          else
+            from_date="$(date -d "$to_date -6 days" +%F)"
+          fi
+
+          echo "from_date=$from_date" >> "$GITHUB_OUTPUT"
+          echo "to_date=$to_date" >> "$GITHUB_OUTPUT"
+
+      - name: Update snapshot JSON
+        run: |
+          python scripts/update_rice_snapshot.py \
+            --from-date "${{ steps.dates.outputs.from_date }}" \
+            --to-date "${{ steps.dates.outputs.to_date }}"
+
+      - name: Commit and push changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add frontend/src/data/rice-price.json
+
+          if git diff --cached --quiet; then
+            echo "No snapshot changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Update rice snapshot ${{ steps.dates.outputs.from_date }} to ${{ steps.dates.outputs.to_date }}"
+          git push origin HEAD:main
