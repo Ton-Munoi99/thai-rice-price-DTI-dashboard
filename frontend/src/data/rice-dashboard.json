@@ -2,9 +2,9 @@
   "meta": {
     "source_name": "Department of Internal Trade (DIT)",
     "source_url": "https://data.moc.go.th/OpenData/GISProductPrice",
-    "generated_at": "2026-03-17T11:41:01+07:00",
-    "history_from": "2023-03-18",
-    "history_to": "2026-03-16",
+    "generated_at": "2026-03-18T11:39:33+07:00",
+    "history_from": "2023-03-19",
+    "history_to": "2026-03-17",
     "history_years": 3.0,
     "product_count": 11,
     "note": "Snapshot นี้เก็บราคาข้าวหลายชนิดสำหรับหน้า dashboard ล่าสุดและการดูย้อนหลัง 3 ปี โดยไม่ต้องยิง API ตอนเปิดเว็บ"
