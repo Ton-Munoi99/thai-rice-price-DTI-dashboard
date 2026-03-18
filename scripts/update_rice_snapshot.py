@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta, timezone
+from html import unescape
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.error import HTTPError, URLError
@@ -14,6 +16,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 DEFAULT_BASE_URL = "https://dataapi.moc.go.th/gis-product-prices"
+DEFAULT_WEB_URL = "https://data.moc.go.th/OpenData/GISProductPrice"
 DEFAULT_PRODUCTS_URL = "https://dataapi.moc.go.th/gis-products"
 DEFAULT_SOURCE_URL = "https://data.moc.go.th/OpenData/GISProductPrice"
 DEFAULT_LATEST_BUNDLE_OUTPUT = "frontend/src/data/rice-latest.json"
@@ -21,6 +24,7 @@ DEFAULT_LATEST_PUBLIC_OUTPUT = "frontend/public/data/rice-latest.json"
 DEFAULT_HISTORY_DIR = "frontend/public/data/rice-history"
 DEFAULT_LEGACY_INPUT = "frontend/src/data/rice-dashboard.json"
 DEFAULT_HISTORY_YEARS = 5
+DEFAULT_REFRESH_LOOKBACK_DAYS = 21
 
 DEFAULT_PRODUCTS = [
     {"product_id": "R11029", "product_name": "ข้าวหอมมะลิ 100% ชั้น 1"},
@@ -63,6 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout", type=int, default=45, help="HTTP timeout in seconds")
     parser.add_argument("--max-workers", type=int, default=4, help="Parallel product workers")
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="DIT price API base URL")
+    parser.add_argument("--web-url", default=DEFAULT_WEB_URL, help="DIT website search page URL")
     parser.add_argument(
         "--products-url", default=DEFAULT_PRODUCTS_URL, help="DIT product catalog URL"
     )
@@ -85,6 +90,12 @@ def parse_args() -> argparse.Namespace:
         "--legacy-input",
         default=DEFAULT_LEGACY_INPUT,
         help="Legacy monolithic snapshot JSON path used as a fallback source",
+    )
+    parser.add_argument(
+        "--refresh-lookback-days",
+        type=int,
+        default=DEFAULT_REFRESH_LOOKBACK_DAYS,
+        help="When fallback history exists, fetch only this many trailing days before the end date",
     )
     return parser.parse_args()
 
@@ -118,11 +129,14 @@ def daterange_chunks(start: date, end: date, chunk_days: int) -> List[tuple[date
     return chunks
 
 
-def fetch_json(url: str, timeout: int) -> dict | list:
+def fetch_text(url: str, timeout: int) -> str:
     with urlopen(url, timeout=timeout) as response:
         charset = response.headers.get_content_charset() or "utf-8"
-        payload = response.read().decode(charset)
-    return json.loads(payload)
+        return response.read().decode(charset, errors="replace")
+
+
+def fetch_json(url: str, timeout: int) -> dict | list:
+    return json.loads(fetch_text(url, timeout))
 
 
 def build_price_url(base_url: str, product_id: str, start: date, end: date) -> str:
@@ -134,6 +148,18 @@ def build_price_url(base_url: str, product_id: str, start: date, end: date) -> s
         }
     )
     return f"{base_url}?{query}"
+
+
+def build_web_price_url(web_url: str, product_id: str, start: date, end: date) -> str:
+    query = urlencode(
+        {
+            "product_id": product_id,
+            "from_date": start.isoformat(),
+            "to_date": end.isoformat(),
+            "task": "search",
+        }
+    )
+    return f"{web_url}?{query}"
 
 
 def build_products_url(products_url: str) -> str:
@@ -216,6 +242,54 @@ def summary_from_records(records: List[Dict[str, object]]) -> dict:
     }
 
 
+def last_record_date(records: List[Dict[str, object]]) -> str:
+    return str(records[-1]["date"]) if records else ""
+
+
+def clean_html_text(value: str) -> str:
+    without_tags = re.sub(r"<[^>]+>", " ", value)
+    return re.sub(r"\s+", " ", unescape(without_tags)).strip()
+
+
+def extract_single_value(html_text: str, label: str) -> str:
+    pattern = re.compile(
+        rf"<td[^>]*>\s*<b>\s*{re.escape(label)}\s*</b>\s*</td>\s*<td[^>]*>(.*?)</td>",
+        re.IGNORECASE | re.DOTALL,
+    )
+    match = pattern.search(html_text)
+    return clean_html_text(match.group(1)) if match else ""
+
+
+def parse_html_price_page(html_text: str, default_name: str) -> dict:
+    row_pattern = re.compile(
+        r"<td>\s*(\d{1,2}/\d{1,2}/\d{4})\s*</td>\s*<td[^>]*>\s*([\d,]+(?:\.\d+)?)\s*</td>\s*<td[^>]*>\s*([\d,]+(?:\.\d+)?)\s*</td>",
+        re.IGNORECASE | re.DOTALL,
+    )
+    records = []
+    unit = extract_single_value(html_text, "หน่วย") or "บาท/100 กก."
+    for raw_date, raw_min, raw_max in row_pattern.findall(html_text):
+        parsed_date = datetime.strptime(raw_date, "%m/%d/%Y").date().isoformat()
+        price_min = float(raw_min.replace(",", ""))
+        price_max = float(raw_max.replace(",", ""))
+        records.append(
+            {
+                "date": parsed_date,
+                "price_min": price_min,
+                "price_max": price_max,
+                "price_avg": round((price_min + price_max) / 2, 2),
+                "unit": unit,
+            }
+        )
+
+    return {
+        "product_name": extract_single_value(html_text, "ชื่อสินค้า") or default_name,
+        "category_name": extract_single_value(html_text, "หมวดหมู่สินค้า"),
+        "group_name": extract_single_value(html_text, "กลุ่มสินค้า"),
+        "unit": unit,
+        "records": merge_records(records),
+    }
+
+
 def fetch_catalog(products_url: str, timeout: int) -> Dict[str, dict]:
     try:
         payload = fetch_json(build_products_url(products_url), timeout=timeout)
@@ -241,10 +315,11 @@ def load_existing_history(history_dir: Path) -> Dict[str, dict]:
             continue
         product_id = payload.get("meta", {}).get("product_id")
         if product_id:
+            records = payload.get("records", [])
             existing[product_id] = {
                 "meta": payload.get("meta", {}),
-                "records": payload.get("records", []),
-                "summary": summary_from_records(payload.get("records", [])),
+                "records": records,
+                "summary": summary_from_records(records),
             }
     return existing
 
@@ -281,6 +356,58 @@ def load_legacy_snapshot(legacy_path: Path) -> Dict[str, dict]:
     return result
 
 
+def choose_fresher_payload(candidates: List[Optional[dict]]) -> Optional[dict]:
+    valid = [candidate for candidate in candidates if candidate and candidate.get("records")]
+    if not valid:
+        return None
+
+    def score(item: dict) -> tuple[str, int]:
+        records = item.get("records", [])
+        return (last_record_date(records), len(records))
+
+    return max(valid, key=score)
+
+
+def merge_with_fallback(payload: dict, fallback: Optional[dict]) -> dict:
+    if not fallback or not fallback.get("records"):
+        return payload
+
+    merged_records = merge_records(fallback.get("records", []) + payload.get("records", []))
+    if not merged_records:
+        return payload
+
+    meta = {
+        "product_id": payload["meta"].get("product_id") or fallback["meta"].get("product_id"),
+        "product_name": payload["meta"].get("product_name") or fallback["meta"].get("product_name"),
+        "category_name": payload["meta"].get("category_name")
+        or fallback["meta"].get("category_name", ""),
+        "group_name": payload["meta"].get("group_name") or fallback["meta"].get("group_name", ""),
+        "unit": payload["meta"].get("unit") or fallback["meta"].get("unit", "บาท/100 กก."),
+        "history_from": merged_records[0]["date"],
+        "history_to": merged_records[-1]["date"],
+        "record_count": len(merged_records),
+    }
+
+    return {
+        "meta": meta,
+        "records": merged_records,
+        "summary": summary_from_records(merged_records),
+    }
+
+
+def resolve_fetch_start(
+    requested_start: date,
+    requested_end: date,
+    fallback: Optional[dict],
+    lookback_days: int,
+) -> date:
+    if not fallback or not fallback.get("records"):
+        return requested_start
+    latest_known = date.fromisoformat(last_record_date(fallback["records"]))
+    tail_start = latest_known - timedelta(days=max(lookback_days - 1, 0))
+    return max(requested_start, min(tail_start, requested_end))
+
+
 def build_product_history(
     product_id: str,
     catalog_entry: dict,
@@ -290,27 +417,44 @@ def build_product_history(
 ) -> dict:
     all_records: List[Dict[str, object]] = []
     meta: dict = {}
+    default_name = catalog_entry.get("product_name") or next(
+        (item["product_name"] for item in DEFAULT_PRODUCTS if item["product_id"] == product_id),
+        product_id,
+    )
 
     for chunk_start, chunk_end in daterange_chunks(start, end, args.chunk_days):
-        payload = fetch_json(
-            build_price_url(args.base_url, product_id, chunk_start, chunk_end),
-            timeout=args.timeout,
-        )
-        if isinstance(payload, dict):
-            meta = payload
-            all_records.extend(
-                normalize_records(payload.get("price_list", []), payload.get("unit", ""))
+        payload = None
+        try:
+            payload = fetch_json(
+                build_price_url(args.base_url, product_id, chunk_start, chunk_end),
+                timeout=args.timeout,
             )
+            if not isinstance(payload, dict):
+                raise ValueError("Unexpected JSON payload type")
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValueError):
+            html_payload = parse_html_price_page(
+                fetch_text(
+                    build_web_price_url(args.web_url, product_id, chunk_start, chunk_end),
+                    timeout=args.timeout,
+                ),
+                default_name=default_name,
+            )
+            if html_payload["records"]:
+                meta = {
+                    "product_name": html_payload["product_name"],
+                    "category_name": html_payload["category_name"],
+                    "group_name": html_payload["group_name"],
+                    "unit": html_payload["unit"],
+                }
+                all_records.extend(html_payload["records"])
+                continue
+            raise
+
+        meta = payload
+        all_records.extend(normalize_records(payload.get("price_list", []), payload.get("unit", "")))
 
     records = merge_records(all_records)
-    product_name = (
-        meta.get("product_name")
-        or catalog_entry.get("product_name")
-        or next(
-            (item["product_name"] for item in DEFAULT_PRODUCTS if item["product_id"] == product_id),
-            product_id,
-        )
-    )
+    product_name = meta.get("product_name") or default_name
 
     return {
         "meta": {
@@ -430,9 +574,14 @@ def main() -> int:
     catalog = fetch_catalog(args.products_url, timeout=args.timeout)
     existing_history = load_existing_history(history_dir)
     legacy_history = load_legacy_snapshot(legacy_input)
-    fallback_history = {**legacy_history, **existing_history}
-    product_ids = [item.strip() for item in args.product_ids.split(",") if item.strip()]
 
+    fallback_history = {}
+    for product_id in set(existing_history) | set(legacy_history):
+      fallback_history[product_id] = choose_fresher_payload(
+          [legacy_history.get(product_id), existing_history.get(product_id)]
+      )
+
+    product_ids = [item.strip() for item in args.product_ids.split(",") if item.strip()]
     payloads: List[Optional[dict]] = [None] * len(product_ids)
     warnings: List[str] = []
 
@@ -443,7 +592,7 @@ def main() -> int:
                 product_id,
                 catalog.get(product_id, {}),
                 args,
-                start,
+                resolve_fetch_start(start, end, fallback_history.get(product_id), args.refresh_lookback_days),
                 end,
             ): index
             for index, product_id in enumerate(product_ids)
@@ -452,15 +601,18 @@ def main() -> int:
         for future in as_completed(futures):
             index = futures[future]
             product_id = product_ids[index]
+            fallback = fallback_history.get(product_id)
             try:
                 payload = future.result()
-                if not payload.get("records") and product_id in fallback_history:
-                    payload = fallback_history[product_id]
-                    warnings.append(f"{product_id}: API returned no rows, kept fallback history")
+                if payload.get("records"):
+                    payload = merge_with_fallback(payload, fallback)
+                elif fallback:
+                    payload = fallback
+                    warnings.append(f"{product_id}: source returned no rows, kept fallback history")
                 payloads[index] = payload
-            except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
-                if product_id in fallback_history:
-                    payloads[index] = fallback_history[product_id]
+            except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
+                if fallback:
+                    payloads[index] = fallback
                     warnings.append(f"{product_id}: fetch failed, kept fallback history ({exc})")
                     continue
                 warnings.append(f"{product_id}: fetch failed and was skipped ({exc})")
