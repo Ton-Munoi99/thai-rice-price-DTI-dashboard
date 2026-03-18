@@ -9,8 +9,10 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptDir
-$snapshotPath = Join-Path $projectRoot "frontend\src\data\rice-dashboard.json"
 $updateScript = Join-Path $projectRoot "scripts\update_rice_snapshot.py"
+$latestBundlePath = Join-Path $projectRoot "frontend\src\data\rice-latest.json"
+$latestPublicPath = Join-Path $projectRoot "frontend\public\data\rice-latest.json"
+$historySnapshotPath = Join-Path $projectRoot "frontend\public\data\rice-history"
 
 if (-not $ToDate) {
     $ToDate = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd")
@@ -32,12 +34,14 @@ Write-Host ""
 
 Set-Location $projectRoot
 
-python $updateScript --from-date $FromDate --to-date $ToDate --output $snapshotPath
+python $updateScript --from-date $FromDate --to-date $ToDate --latest-bundle-output $latestBundlePath --latest-public-output $latestPublicPath --history-dir $historySnapshotPath
 if ($LASTEXITCODE -ne 0) {
     throw "Snapshot update failed."
 }
 
-git add $snapshotPath
+git add $latestBundlePath
+git add $latestPublicPath
+git add $historySnapshotPath
 if ($LASTEXITCODE -ne 0) {
     throw "git add failed."
 }
