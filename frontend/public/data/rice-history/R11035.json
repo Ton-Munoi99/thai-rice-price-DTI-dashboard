@@ -6,8 +6,8 @@
     "group_name": "ราคาขายส่งข้าว ผลิตภัณฑ์ข้าวและกระสอบป่าน",
     "unit": "บาท/100 กก.",
     "history_from": "2023-03-20",
-    "history_to": "2026-04-01",
-    "record_count": 731
+    "history_to": "2026-04-02",
+    "record_count": 732
   },
   "records": [
     {
@@ -5122,6 +5122,13 @@
     },
     {
       "date": "2026-04-01",
+      "price_min": 3240.0,
+      "price_max": 3250.0,
+      "price_avg": 3245.0,
+      "unit": "บาท/100 กก."
+    },
+    {
+      "date": "2026-04-02",
       "price_min": 3240.0,
       "price_max": 3250.0,
       "price_avg": 3245.0,
