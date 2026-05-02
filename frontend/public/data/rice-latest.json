@@ -2,9 +2,9 @@
   "meta": {
     "source_name": "Department of Internal Trade (DIT)",
     "source_url": "https://data.moc.go.th/OpenData/GISProductPrice",
-    "generated_at": "2026-05-01T12:50:18+07:00",
+    "generated_at": "2026-05-02T12:20:17+07:00",
     "history_from": "2023-03-17",
-    "history_to": "2026-04-30",
+    "history_to": "2026-05-01",
     "history_years": 3.1,
     "product_count": 11,
     "note": "หน้าแรกโหลด latest index ทันที ส่วนข้อมูลย้อนหลังถูกแยกไฟล์รายสินค้าเพื่อให้เว็บเปิดเร็ว"
@@ -18,14 +18,14 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11029.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 4010.0,
         "price_max": 4020.0,
         "price_avg": 4015.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
+        "date": "2026-04-30",
         "price_min": 4010.0,
         "price_max": 4020.0,
         "price_avg": 4015.0,
@@ -34,15 +34,11 @@
       "change_abs": 0.0,
       "change_pct": 0.0,
       "summary_30d": {
-        "avg": 3893.89,
+        "avg": 3908.33,
         "low": 3750.0,
         "high": 4020.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 3755.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 3755.0
@@ -117,6 +113,10 @@
         },
         {
           "date": "2026-04-30",
+          "price_avg": 4015.0
+        },
+        {
+          "date": "2026-05-01",
           "price_avg": 4015.0
         }
       ]
@@ -129,14 +129,14 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11031.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 3650.0,
         "price_max": 3660.0,
         "price_avg": 3655.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
+        "date": "2026-04-30",
         "price_min": 3650.0,
         "price_max": 3660.0,
         "price_avg": 3655.0,
@@ -145,15 +145,11 @@
       "change_abs": 0.0,
       "change_pct": 0.0,
       "summary_30d": {
-        "avg": 3533.89,
+        "avg": 3548.33,
         "low": 3390.0,
         "high": 3660.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 3395.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 3395.0
@@ -228,6 +224,10 @@
         },
         {
           "date": "2026-04-30",
+          "price_avg": 3655.0
+        },
+        {
+          "date": "2026-05-01",
           "price_avg": 3655.0
         }
       ]
@@ -240,14 +240,14 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11037.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 1890.0,
         "price_max": 1900.0,
         "price_avg": 1895.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
+        "date": "2026-04-30",
         "price_min": 1890.0,
         "price_max": 1900.0,
         "price_avg": 1895.0,
@@ -256,15 +256,11 @@
       "change_abs": 0.0,
       "change_pct": 0.0,
       "summary_30d": {
-        "avg": 1928.33,
-        "low": 1840.0,
+        "avg": 1931.11,
+        "low": 1890.0,
         "high": 2000.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 1845.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 1845.0
@@ -340,6 +336,10 @@
         {
           "date": "2026-04-30",
           "price_avg": 1895.0
+        },
+        {
+          "date": "2026-05-01",
+          "price_avg": 1895.0
         }
       ]
     },
@@ -351,14 +351,14 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11035.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 3240.0,
         "price_max": 3250.0,
         "price_avg": 3245.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
+        "date": "2026-04-30",
         "price_min": 3240.0,
         "price_max": 3250.0,
         "price_avg": 3245.0,
@@ -373,10 +373,6 @@
       },
       "recent_points": [
         {
-          "date": "2026-03-30",
-          "price_avg": 3245.0
-        },
-        {
           "date": "2026-03-31",
           "price_avg": 3245.0
         },
@@ -451,6 +447,10 @@
         {
           "date": "2026-04-30",
           "price_avg": 3245.0
+        },
+        {
+          "date": "2026-05-01",
+          "price_avg": 3245.0
         }
       ]
     },
@@ -462,31 +462,27 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11001.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 1310.0,
         "price_max": 1320.0,
         "price_avg": 1315.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
-        "price_min": 1280.0,
-        "price_max": 1290.0,
-        "price_avg": 1285.0,
+        "date": "2026-04-30",
+        "price_min": 1310.0,
+        "price_max": 1320.0,
+        "price_avg": 1315.0,
         "unit": "บาท/100 กก."
       },
-      "change_abs": 30.0,
-      "change_pct": 2.33,
+      "change_abs": 0.0,
+      "change_pct": 0.0,
       "summary_30d": {
-        "avg": 1276.67,
+        "avg": 1281.11,
         "low": 1230.0,
         "high": 1340.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 1215.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 1235.0
@@ -562,6 +558,10 @@
         {
           "date": "2026-04-30",
           "price_avg": 1315.0
+        },
+        {
+          "date": "2026-05-01",
+          "price_avg": 1315.0
         }
       ]
     },
@@ -573,31 +573,27 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11003.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 1250.0,
         "price_max": 1260.0,
         "price_avg": 1255.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
-        "price_min": 1220.0,
-        "price_max": 1230.0,
-        "price_avg": 1225.0,
+        "date": "2026-04-30",
+        "price_min": 1250.0,
+        "price_max": 1260.0,
+        "price_avg": 1255.0,
         "unit": "บาท/100 กก."
       },
-      "change_abs": 30.0,
-      "change_pct": 2.45,
+      "change_abs": 0.0,
+      "change_pct": 0.0,
       "summary_30d": {
-        "avg": 1213.89,
+        "avg": 1218.33,
         "low": 1120.0,
         "high": 1280.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 1155.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 1175.0
@@ -673,6 +669,10 @@
         {
           "date": "2026-04-30",
           "price_avg": 1255.0
+        },
+        {
+          "date": "2026-05-01",
+          "price_avg": 1255.0
         }
       ]
     },
@@ -684,31 +684,27 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11005.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 1260.0,
         "price_max": 1270.0,
         "price_avg": 1265.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
-        "price_min": 1230.0,
-        "price_max": 1240.0,
-        "price_avg": 1235.0,
+        "date": "2026-04-30",
+        "price_min": 1260.0,
+        "price_max": 1270.0,
+        "price_avg": 1265.0,
         "unit": "บาท/100 กก."
       },
-      "change_abs": 30.0,
-      "change_pct": 2.43,
+      "change_abs": 0.0,
+      "change_pct": 0.0,
       "summary_30d": {
-        "avg": 1226.67,
+        "avg": 1231.11,
         "low": 1180.0,
         "high": 1290.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 1165.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 1185.0
@@ -784,6 +780,10 @@
         {
           "date": "2026-04-30",
           "price_avg": 1265.0
+        },
+        {
+          "date": "2026-05-01",
+          "price_avg": 1265.0
         }
       ]
     },
@@ -795,31 +795,27 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11007.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 1230.0,
         "price_max": 1240.0,
         "price_avg": 1235.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
-        "price_min": 1200.0,
-        "price_max": 1210.0,
-        "price_avg": 1205.0,
+        "date": "2026-04-30",
+        "price_min": 1230.0,
+        "price_max": 1240.0,
+        "price_avg": 1235.0,
         "unit": "บาท/100 กก."
       },
-      "change_abs": 30.0,
-      "change_pct": 2.49,
+      "change_abs": 0.0,
+      "change_pct": 0.0,
       "summary_30d": {
-        "avg": 1196.67,
+        "avg": 1201.11,
         "low": 1150.0,
         "high": 1260.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 1135.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 1155.0
@@ -895,6 +891,10 @@
         {
           "date": "2026-04-30",
           "price_avg": 1235.0
+        },
+        {
+          "date": "2026-05-01",
+          "price_avg": 1235.0
         }
       ]
     },
@@ -906,31 +906,27 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11009.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 1120.0,
         "price_max": 1130.0,
         "price_avg": 1125.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
-        "price_min": 1090.0,
-        "price_max": 1100.0,
-        "price_avg": 1095.0,
+        "date": "2026-04-30",
+        "price_min": 1120.0,
+        "price_max": 1130.0,
+        "price_avg": 1125.0,
         "unit": "บาท/100 กก."
       },
-      "change_abs": 30.0,
-      "change_pct": 2.74,
+      "change_abs": 0.0,
+      "change_pct": 0.0,
       "summary_30d": {
-        "avg": 1086.67,
+        "avg": 1091.11,
         "low": 1040.0,
         "high": 1150.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 1025.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 1045.0
@@ -1006,6 +1002,10 @@
         {
           "date": "2026-04-30",
           "price_avg": 1125.0
+        },
+        {
+          "date": "2026-05-01",
+          "price_avg": 1125.0
         }
       ]
     },
@@ -1017,14 +1017,14 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11018.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 2330.0,
         "price_max": 2350.0,
         "price_avg": 2340.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
+        "date": "2026-04-30",
         "price_min": 2330.0,
         "price_max": 2350.0,
         "price_avg": 2340.0,
@@ -1039,10 +1039,6 @@
       },
       "recent_points": [
         {
-          "date": "2026-03-30",
-          "price_avg": 2340.0
-        },
-        {
           "date": "2026-03-31",
           "price_avg": 2340.0
         },
@@ -1116,6 +1112,10 @@
         },
         {
           "date": "2026-04-30",
+          "price_avg": 2340.0
+        },
+        {
+          "date": "2026-05-01",
           "price_avg": 2340.0
         }
       ]
@@ -1128,31 +1128,27 @@
       "unit": "บาท/100 กก.",
       "history_file": "/data/rice-history/R11026.json",
       "latest": {
-        "date": "2026-04-30",
+        "date": "2026-05-01",
         "price_min": 1210.0,
         "price_max": 1220.0,
         "price_avg": 1215.0,
         "unit": "บาท/100 กก."
       },
       "previous": {
-        "date": "2026-04-29",
-        "price_min": 1190.0,
-        "price_max": 1200.0,
-        "price_avg": 1195.0,
+        "date": "2026-04-30",
+        "price_min": 1210.0,
+        "price_max": 1220.0,
+        "price_avg": 1215.0,
         "unit": "บาท/100 กก."
       },
-      "change_abs": 20.0,
-      "change_pct": 1.67,
+      "change_abs": 0.0,
+      "change_pct": 0.0,
       "summary_30d": {
-        "avg": 1184.44,
+        "avg": 1188.33,
         "low": 1140.0,
         "high": 1230.0
       },
       "recent_points": [
-        {
-          "date": "2026-03-30",
-          "price_avg": 1125.0
-        },
         {
           "date": "2026-03-31",
           "price_avg": 1145.0
@@ -1227,6 +1223,10 @@
         },
         {
           "date": "2026-04-30",
+          "price_avg": 1215.0
+        },
+        {
+          "date": "2026-05-01",
           "price_avg": 1215.0
         }
       ]
